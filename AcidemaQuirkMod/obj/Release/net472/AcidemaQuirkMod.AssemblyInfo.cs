@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AcidemaQuirkMod")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f81556231f2f4b17898a968b8a4dc0591413d5ed")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+517be6d0290dbccd7b15823cf0efc0f8e54fae22")]
 [assembly: System.Reflection.AssemblyProductAttribute("AcidemaQuirkMod")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AcidemaQuirkMod")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
