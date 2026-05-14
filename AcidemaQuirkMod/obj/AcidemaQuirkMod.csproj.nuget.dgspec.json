@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "restore": {
+    "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj": {}
+  },
+  "projects": {
+    "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
+        "projectName": "AcidemaQuirkMod",
+        "projectPath": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
+        "packagesPath": "C:\\Users\\antho\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\antho\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "targetAlias": "net472",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net472": {
+          "targetAlias": "net472",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
