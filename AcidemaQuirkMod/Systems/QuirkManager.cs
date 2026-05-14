@@ -70,15 +70,14 @@ namespace AcidemaQuirkMod.Systems
             _unitQuirks[unitId] = instance;
 
             // Apply passive mutation traits to the unit via addActorTrait
-            var actor = GetActor(unitId);
+            dynamic actor = GetActor(unitId);
             if (actor != null && def.Factor?.PassiveMutations != null)
             {
                 foreach (var mutationId in def.Factor.PassiveMutations)
                 {
-                    // AssetManager.traits.get() — confirmed in Assembly-CSharp
-                    var trait = AssetManager.traits.get(mutationId);
-                    if (trait != null && !actor.hasTrait(mutationId))
-                        actor.addActorTrait(trait);
+                    var trait = WorldBoxApi.GetTrait(mutationId);
+                    if (trait != null && !WorldBoxApi.ActorHasTrait(actor, mutationId))
+                        WorldBoxApi.AddActorTrait(actor, trait);
                 }
             }
 
@@ -186,8 +185,8 @@ namespace AcidemaQuirkMod.Systems
             if (compat < q.Definition.Drawback.LowCompatibilityThreshold)
                 amount *= q.Definition.Drawback.LowCompatibilityMultiplier;
 
-            var actor = GetActor(unitId);
-            if (actor == null || !actor.isAlive()) return;
+            dynamic actor = GetActor(unitId);
+            if (actor == null || !WorldBoxApi.IsActorAlive(actor)) return;
 
             // actor.getHit — confirmed method in Actor class (Assembly-CSharp)
             actor.getHit(amount);
@@ -261,9 +260,10 @@ namespace AcidemaQuirkMod.Systems
 
             // VFX: acid cloud burst at the unit's current tile
             // EffectsLibrary.spawnCloudAcid — confirmed in Assembly-CSharp
-            var actor = GetActor(unitId);
-            if (actor?.currentTile != null)
-                EffectsLibrary.spawnCloudAcid(actor.currentTile);
+            dynamic actor = GetActor(unitId);
+            var tile = WorldBoxApi.GetActorCurrentTile(actor);
+            if (tile != null)
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", tile);
 
             Debug.Log($"[Quirk] AWAKENING triggered for {unitId}!");
         }
@@ -310,12 +310,12 @@ namespace AcidemaQuirkMod.Systems
         /// World.world.units — confirmed list in Assembly-CSharp.
         /// actor.data.id     — confirmed field in ActorData.
         /// </summary>
-        public static Actor GetActor(string unitId)
+        public static dynamic GetActor(string unitId)
         {
             if (string.IsNullOrEmpty(unitId)) return null;
-            foreach (var actor in World.world.units)
+            foreach (dynamic actor in WorldBoxApi.GetWorldActors())
             {
-                if (actor?.data?.id == unitId)
+                if (WorldBoxApi.GetActorId(actor) == unitId)
                     return actor;
             }
             return null;

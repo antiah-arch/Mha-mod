@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj": {}
+    "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj": {}
   },
   "projects": {
-    "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj": {
+    "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
+        "projectUniqueName": "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
         "projectName": "AcidemaQuirkMod",
-        "projectPath": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
+        "projectPath": "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
         "packagesPath": "C:\\Users\\antho\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\obj\\",
+        "outputPath": "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\antho\\AppData\\Roaming\\NuGet\\NuGet.Config",

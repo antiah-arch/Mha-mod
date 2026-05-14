@@ -1,4 +1,7 @@
+using System;
+using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 using AcidemaQuirkMod.Core;
 using AcidemaQuirkMod.Systems;
 
@@ -30,6 +33,7 @@ namespace AcidemaQuirkMod.Abilities
         private static readonly Color AcidYellow     = new Color(0.55f, 0.80f, 0.10f, 1f);
         private static readonly Color AcidWhite      = new Color(0.80f, 1.00f, 0.70f, 1f);
 
+
         // ─────────────────────────────────────────
         //  acid_spit  (Rank E)
         //  Short wind-up → projectile launch → hit flash
@@ -40,7 +44,7 @@ namespace AcidemaQuirkMod.Abilities
             if (!QuirkManager.Instance.HasAbility(casterId, "acid_spit")) return;
             if (!QuirkManager.Instance.TryGetQuirk(casterId, out var q)) return;
 
-            var caster = QuirkManager.GetActor(casterId);
+            dynamic caster = QuirkManager.GetActor(casterId);
             if (caster == null || !caster.isAlive()) return;
 
             var   mods  = q.GetCurrentModifiers();
@@ -61,19 +65,19 @@ namespace AcidemaQuirkMod.Abilities
                 caster.spawnBurst(caster.currentTile);
 
             // ── FIND TARGET ──
-            var target = GetNearestEnemy(caster, range);
+            dynamic target = GetNearestEnemy(caster, range);
             if (target == null) return;
 
             // ── PROJECTILE HIT ANIMATION ──
             // Acid touch effect on the target's tile (projectile landing)
             if (target.currentTile != null)
             {
-                EffectsLibrary.acidTouchEffect(target.currentTile);
-                EffectsLibrary.spawnCloudAcid(target.currentTile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", target.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", target.currentTile);
             }
 
             // Acid blood splatter on target — confirmed method in Assembly-CSharp
-            EffectsLibrary.acidBloodEffect(target);
+            WorldBoxApi.CallEffectsLibrary("acidBloodEffect", target);
 
             // Flash target green on hit
             target.makeFlash(AcidGreen);
@@ -82,7 +86,7 @@ namespace AcidemaQuirkMod.Abilities
             target.getHit(dmg);
 
             if (Random.value < mods.PoisonChanceBonus)
-                MapObjectHelper.addPoisonedEffectOnTarget(target);
+                WorldBoxApi.CallMapObjectHelper("addPoisonedEffectOnTarget", target);
 
             if (Random.value < mods.CorrosionChanceBonus)
                 CorrodArmor(target, 0.10f);
@@ -109,7 +113,7 @@ namespace AcidemaQuirkMod.Abilities
             if (!QuirkManager.Instance.HasAbility(casterId, "acid_pool")) return;
             if (!QuirkManager.Instance.TryGetQuirk(casterId, out var q)) return;
 
-            var caster = QuirkManager.GetActor(casterId);
+            dynamic caster = QuirkManager.GetActor(casterId);
             if (caster == null || !caster.isAlive()) return;
 
             var   mods   = q.GetCurrentModifiers();
@@ -130,7 +134,7 @@ namespace AcidemaQuirkMod.Abilities
             if (caster.currentTile != null)
             {
                 caster.spawnBurstSpecial(caster.currentTile);
-                EffectsLibrary.acidTouchEffect(caster.currentTile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", caster.currentTile);
             }
 
             // ── POOL SPREAD ANIMATION ──
@@ -138,23 +142,22 @@ namespace AcidemaQuirkMod.Abilities
             var centerTile = caster.currentTile;
             if (centerTile == null) return;
 
-            var tiles = World.world.getTilesAround(centerTile, radius);
-            foreach (var tile in tiles)
+            foreach (var tile in WorldBoxApi.GetTilesAround(centerTile, radius))
             {
-                EffectsLibrary.spawnCloudAcid(tile);
-                EffectsLibrary.acidTouchEffect(tile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", tile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", tile);
 
-                var actor = World.world.getActorFromTile(tile);
+                dynamic actor = WorldBoxApi.GetActorFromTile(tile);
                 if (actor == null || !actor.isAlive() || !IsEnemy(caster, actor)) continue;
 
                 // Hit flash on each affected actor
                 actor.makeFlash(AcidGreen);
-                EffectsLibrary.acidBloodEffect(actor);
+                WorldBoxApi.CallEffectsLibrary("acidBloodEffect", actor);
 
                 actor.getHit(dps);
 
                 if (Random.value < mods.PoisonChanceBonus)
-                    MapObjectHelper.addPoisonedEffectOnTarget(actor);
+                    WorldBoxApi.CallMapObjectHelper("addPoisonedEffectOnTarget", actor);
             }
         }
 
@@ -168,7 +171,7 @@ namespace AcidemaQuirkMod.Abilities
             if (!QuirkManager.Instance.HasAbility(casterId, "armor_melt")) return;
             if (!QuirkManager.Instance.TryGetQuirk(casterId, out var q)) return;
 
-            var caster = QuirkManager.GetActor(casterId);
+            dynamic caster = QuirkManager.GetActor(casterId);
             if (caster == null || !caster.isAlive()) return;
 
             var   mods  = q.GetCurrentModifiers();
@@ -189,22 +192,22 @@ namespace AcidemaQuirkMod.Abilities
                 caster.spawnBurst(caster.currentTile);
 
             // ── TARGET ──
-            var target = GetNearestEnemy(caster, range);
+            dynamic target = GetNearestEnemy(caster, range);
             if (target == null) return;
 
             // ── MELT ANIMATION ON TARGET ──
             // Acid touch on target tile — the spray landing
             if (target.currentTile != null)
             {
-                EffectsLibrary.acidTouchEffect(target.currentTile);
-                EffectsLibrary.spawnCloudAcid(target.currentTile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", target.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", target.currentTile);
 
                 // Explosion wave — armor "shattering" from the acid
-                EffectsLibrary.spawnExplosionWave(target.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnExplosionWave", target.currentTile);
             }
 
             // Acid blood — armor visibly dissolving
-            EffectsLibrary.acidBloodEffect(target);
+            WorldBoxApi.CallEffectsLibrary("acidBloodEffect", target);
 
             // Sustained green tint on target — acid eating the armor
             target.startColorEffect(AcidGreen, 1.0f);
@@ -228,7 +231,7 @@ namespace AcidemaQuirkMod.Abilities
             if (!QuirkManager.Instance.HasAbility(casterId, "acid_wave")) return;
             if (!QuirkManager.Instance.TryGetQuirk(casterId, out var q)) return;
 
-            var caster = QuirkManager.GetActor(casterId);
+            dynamic caster = QuirkManager.GetActor(casterId);
             if (caster == null || !caster.isAlive()) return;
 
             var   mods  = q.GetCurrentModifiers();
@@ -247,26 +250,24 @@ namespace AcidemaQuirkMod.Abilities
             {
                 // Large burst + explosion ring at the epicentre
                 caster.spawnBurstSpecial(caster.currentTile);
-                EffectsLibrary.spawnExplosionWave(caster.currentTile);
-                EffectsLibrary.spawnCloudAcid(caster.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnExplosionWave", caster.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", caster.currentTile);
             }
 
             // ── WAVE SPREAD ANIMATION + DAMAGE ──
             int iRange = Mathf.RoundToInt(range);
-            var tiles  = World.world.getTilesAround(caster.currentTile, iRange);
-
-            foreach (var tile in tiles)
+            foreach (var tile in WorldBoxApi.GetTilesAround(caster.currentTile, iRange))
             {
                 // Acid cloud cascades outward on every tile
-                EffectsLibrary.spawnCloudAcid(tile);
-                EffectsLibrary.acidTouchEffect(tile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", tile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", tile);
 
-                var actor = World.world.getActorFromTile(tile);
+                dynamic actor = WorldBoxApi.GetActorFromTile(tile);
                 if (actor == null || !actor.isAlive() || !IsEnemy(caster, actor)) continue;
 
                 // Each hit unit gets a flash + acid blood
                 actor.makeFlash(AcidGreen);
-                EffectsLibrary.acidBloodEffect(actor);
+                WorldBoxApi.CallEffectsLibrary("acidBloodEffect", actor);
 
                 actor.getHit(dmg);
 
@@ -274,7 +275,7 @@ namespace AcidemaQuirkMod.Abilities
                     CorrodArmor(actor, 0.15f);
 
                 if (Random.value < mods.PoisonChanceBonus)
-                    MapObjectHelper.addPoisonedEffectOnTarget(actor);
+                    WorldBoxApi.CallMapObjectHelper("addPoisonedEffectOnTarget", actor);
             }
 
             // ── SELF-INJURY ANIMATION ──
@@ -294,7 +295,7 @@ namespace AcidemaQuirkMod.Abilities
             if (!QuirkManager.Instance.TryGetQuirk(casterId, out var q)) return;
             if (!q.IsActive) return;
 
-            var caster = QuirkManager.GetActor(casterId);
+            dynamic caster = QuirkManager.GetActor(casterId);
             if (caster == null || !caster.isAlive()) return;
 
             var   mods  = q.GetCurrentModifiers();
@@ -312,20 +313,20 @@ namespace AcidemaQuirkMod.Abilities
                 caster.startColorEffect(AcidGreenDim, 0.4f);
 
                 // Status particle rising off the caster — acid vapour
-                EffectsLibrary.spawnStatusParticle(caster, "acid");
+                WorldBoxApi.CallEffectsLibrary("spawnStatusParticle", caster, "acid");
             }
 
             // ── DAMAGE + PER-TILE ANIMATION ──
             if (caster.currentTile == null) return;
-            var tiles = World.world.getTilesAround(caster.currentTile, range);
+            var tiles = WorldBoxApi.GetTilesAround(caster.currentTile, range);
 
             foreach (var tile in tiles)
             {
                 // Subtle acid touch flicker on ground tiles
                 if (Random.value < 0.15f)
-                    EffectsLibrary.acidTouchEffect(tile);
+                    WorldBoxApi.CallEffectsLibrary("acidTouchEffect", tile);
 
-                var actor = World.world.getActorFromTile(tile);
+                dynamic actor = WorldBoxApi.GetActorFromTile(tile);
                 if (actor == null || !actor.isAlive() || !IsEnemy(caster, actor)) continue;
 
                 actor.getHit(dps);
@@ -348,7 +349,7 @@ namespace AcidemaQuirkMod.Abilities
             if (!QuirkManager.Instance.TryGetQuirk(casterId, out var q)) return;
             if (!q.IsAwakened) return;
 
-            var caster = QuirkManager.GetActor(casterId);
+            dynamic caster = QuirkManager.GetActor(casterId);
             if (caster == null || !caster.isAlive()) return;
 
             var   mods  = q.GetCurrentModifiers();
@@ -368,37 +369,36 @@ namespace AcidemaQuirkMod.Abilities
             {
                 // Special burst + nuke-level explosion ring at epicentre
                 caster.spawnBurstSpecial(caster.currentTile);
-                EffectsLibrary.spawnExplosionWave(caster.currentTile);
-                EffectsLibrary.spawnCloudAcid(caster.currentTile);
-                EffectsLibrary.acidTouchEffect(caster.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnExplosionWave", caster.currentTile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", caster.currentTile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", caster.currentTile);
             }
 
             // ── CAST ANIMATION — PHASE 2: DISSOLVE WAVE ──
-            var tiles = World.world.getTilesAround(caster.currentTile, range);
-            foreach (var tile in tiles)
+            foreach (var tile in WorldBoxApi.GetTilesAround(caster.currentTile, range))
             {
                 // Every tile gets acid cloud + touch — total saturation
-                EffectsLibrary.spawnCloudAcid(tile);
-                EffectsLibrary.acidTouchEffect(tile);
+                WorldBoxApi.CallEffectsLibrary("spawnCloudAcid", tile);
+                WorldBoxApi.CallEffectsLibrary("acidTouchEffect", tile);
 
                 // Scattered flash pops across the blast radius
                 if (Random.value < 0.4f)
-                    EffectsLibrary.spawnFlash(tile);
+                    WorldBoxApi.CallEffectsLibrary("spawnFlash", tile);
 
-                var actor = World.world.getActorFromTile(tile);
+                dynamic actor = WorldBoxApi.GetActorFromTile(tile);
                 if (actor == null || !actor.isAlive() || !IsEnemy(caster, actor)) continue;
 
                 // ── PER-TARGET HIT ANIMATION ──
                 // Acid blood + full green dissolve tint on every victim
-                EffectsLibrary.acidBloodEffect(actor);
+                WorldBoxApi.CallEffectsLibrary("acidBloodEffect", actor);
                 actor.makeFlash(AcidWhite);
                 actor.startColorEffect(AcidGreen, 2.0f);  // long tint — dissolving
 
                 // Status particle — acid fumes rising from the victim
-                EffectsLibrary.spawnStatusParticle(actor, "acid");
+                WorldBoxApi.CallEffectsLibrary("spawnStatusParticle", actor, "acid");
 
                 actor.getHit(dmg);
-                MapObjectHelper.addPoisonedEffectOnTarget(actor);
+                WorldBoxApi.CallMapObjectHelper("addPoisonedEffectOnTarget", actor);
                 CorrodArmor(actor, 0.5f);
             }
 
@@ -415,24 +415,24 @@ namespace AcidemaQuirkMod.Abilities
         //  Helpers
         // ─────────────────────────────────────────
 
-        private static void CorrodArmor(Actor target, float fraction)
+        private static void CorrodArmor(dynamic target, float fraction)
         {
-            if (target?.data?.stats == null) return;
-            float current = target.data.stats.armor;
+            if (target == null) return;
+            float current = WorldBoxApi.GetActorArmor(target);
             if (current <= 0f) return;
-            target.data.stats.armor = Mathf.Max(0f, current - current * fraction);
+            WorldBoxApi.SetActorArmor(target, Mathf.Max(0f, current - current * fraction));
         }
 
-        private static Actor GetNearestEnemy(Actor caster, float range)
+        private static dynamic GetNearestEnemy(dynamic caster, float range)
         {
             if (caster.currentTile == null) return null;
             int   iRange      = Mathf.RoundToInt(range);
-            Actor nearest     = null;
+            dynamic nearest   = null;
             float nearestDist = float.MaxValue;
 
-            foreach (var tile in World.world.getTilesAround(caster.currentTile, iRange))
+            foreach (var tile in WorldBoxApi.GetTilesAround(caster.currentTile, iRange))
             {
-                var actor = World.world.getActorFromTile(tile);
+                dynamic actor = WorldBoxApi.GetActorFromTile(tile);
                 if (actor == null || !actor.isAlive() || !IsEnemy(caster, actor)) continue;
 
                 float dist = caster.distanceToActorTile(actor);
@@ -441,7 +441,7 @@ namespace AcidemaQuirkMod.Abilities
             return nearest;
         }
 
-        private static bool IsEnemy(Actor a, Actor b)
+        private static bool IsEnemy(dynamic a, dynamic b)
             => a != null && b != null && a.kingdom != b.kingdom;
 
         private static void ConsumeEnergy(QuirkInstance q, float amount)

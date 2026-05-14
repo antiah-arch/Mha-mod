@@ -57,8 +57,8 @@ namespace AcidemaQuirkMod
             string path = Path.Combine(Paths.PluginPath,
                 "AcidemaQuirkMod", "traits.json");
             string json = File.ReadAllText(path);
-            // Load into WorldBox's trait library
-            AssetManager.traits.loadFromJson(json);
+            // Load into WorldBox's trait library using runtime dispatch
+            WorldBoxApi.LoadTraitJson(json);
         }
     }
 
@@ -79,10 +79,8 @@ namespace AcidemaQuirkMod
         [HarmonyPostfix]
         public static void Postfix(Actor __instance, ActorTrait pTrait)
         {
-            if (__instance?.data == null || pTrait == null) return;
-            if (pTrait.id != AcidemaQuirkPlugin.ACID_TRAIT_ID) return;
-
-            string unitId = __instance.data.id;
+            if (pTrait == null || pTrait.id != AcidemaQuirkPlugin.ACID_TRAIT_ID) return;
+            if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
             // Don't double-register
             if (QuirkManager.Instance.TryGetQuirk(unitId, out _)) return;
@@ -108,10 +106,9 @@ namespace AcidemaQuirkMod
         [HarmonyPostfix]
         public static void Postfix(Actor __instance, ActorTrait pTrait)
         {
-            if (__instance?.data == null || pTrait == null) return;
-            if (pTrait.id != AcidemaQuirkPlugin.ACID_TRAIT_ID) return;
+            if (pTrait == null || pTrait.id != AcidemaQuirkPlugin.ACID_TRAIT_ID) return;
+            if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
-            string unitId = __instance.data.id;
             QuirkManager.Instance.Deactivate(unitId);
             QuirkManager.Instance.RemoveQuirk(unitId);
 
@@ -139,9 +136,8 @@ namespace AcidemaQuirkMod
         [HarmonyPostfix]
         public static void Postfix(Actor __instance)
         {
-            if (__instance?.data == null || !__instance.isAlive()) return;
-
-            string unitId = __instance.data.id;
+            if (!WorldBoxApi.IsActorAlive(__instance)) return;
+            if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
             // Safety sync — hasTrait confirmed in Assembly-CSharp
             if (__instance.hasTrait(AcidemaQuirkPlugin.ACID_TRAIT_ID))
@@ -175,9 +171,9 @@ namespace AcidemaQuirkMod
         [HarmonyPostfix]
         public static void Postfix(Actor __instance)
         {
-            if (__instance?.data == null) return;
+            if (!WorldBoxApi.TryGetActorId(__instance, out _)) return;
 
-            string killerId = __instance.data.kill_action?.id;
+            string killerId = WorldBoxApi.GetActorKillActionId(__instance);
             if (!string.IsNullOrEmpty(killerId))
                 QuirkManager.Instance.RegisterKill(killerId);
         }
@@ -203,11 +199,12 @@ namespace AcidemaQuirkMod
         [HarmonyPostfix]
         public static void Postfix(Actor __instance)
         {
-            if (__instance?.data == null || !__instance.isAlive()) return;
+            if (!WorldBoxApi.IsActorAlive(__instance)) return;
+            string unitId = WorldBoxApi.GetActorId(__instance);
+            if (string.IsNullOrEmpty(unitId)) return;
 
-            string unitId = __instance.data.id;
-            float  hp     = __instance.data.health;
-            float  maxHp  = __instance.getMaxHealth();
+            float hp    = WorldBoxApi.GetActorHealth(__instance);
+            float maxHp = WorldBoxApi.GetActorMaxHealth(__instance);
 
             // Near-death threshold: below 10% HP
             if (maxHp > 0f && (hp / maxHp) < 0.10f)
@@ -230,12 +227,11 @@ namespace AcidemaQuirkMod
         [HarmonyPrefix]
         public static void Prefix(Actor __instance, ref float pDamage)
         {
-            if (__instance?.data == null) return;
+            if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
-            string unitId = __instance.data.id;
-            float  speed  = 1f;
-            float  hp     = 1f;
-            float  armor  = 1f;
+            float speed = 1f;
+            float hp    = 1f;
+            float armor = 1f;
 
             QuirkManager.Instance.ApplyQuirkModifiers(
                 unitId, ref pDamage, ref speed, ref hp, ref armor);
