@@ -2,7 +2,6 @@ C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\Acidem
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\AcidemaQuirkMod.pdb
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\0Harmony.dll
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\Assembly-CSharp.dll
-C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\BepInEx.dll
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\UnityEngine.CoreModule.dll
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\UnityEngine.dll
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\Mono.Cecil.dll
@@ -117,7 +116,6 @@ C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\UnityE
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\UnityEngine.Purchasing.WinRTStub.dll
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\Firebase.Platform.dll
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\GoogleMobileAds.Common.dll
-C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\BepInEx.xml
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\0Harmony.xml
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\UnityEngine.pdb
 C:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Debug\net472\UnityEngine.CoreModule.pdb

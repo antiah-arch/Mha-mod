@@ -1,5 +1,3 @@
-using BepInEx;
-using BepInEx.Logging;
 using HarmonyLib;
 using System;
 using System.Collections;
@@ -16,41 +14,45 @@ namespace AcidemaQuirkMod
     /// Traits are registered by directly constructing ActorTrait objects
     /// and adding them to AssetManager.traits at startup.
     /// </summary>
-    [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    public class AcidemaQuirkPlugin : BaseUnityPlugin
+    public static class AcidemaQuirkPlugin
     {
+        private static Harmony _harmony = null!;
         public const string PluginGuid    = "com.acidema.quirkmod";
         public const string PluginName    = "Acidema Quirk Mod";
         public const string PluginVersion = "1.1.0";
-
-        internal static ManualLogSource Log = null!;
-        private Harmony _harmony = null!;
 
         public const string ACID_TRAIT_ID           = "acid_emission";
         public const string ACIDIC_SKIN_TRAIT_ID    = "acidic_skin";
         public const string CORROSIVE_SALIVA_TRAIT_ID = "corrosive_saliva";
 
-        private void Awake()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Initialize()
         {
-            Log = Logger;
-            Log.LogInfo($"{PluginName} v{PluginVersion} loading...");
+            Debug.Log($"{PluginName} v{PluginVersion} loading...");
 
             QuirkRegistry.Initialize();
 
-            // Register traits directly into WorldBox's AssetManager
-            RegisterTraits();
+            var runnerObj = new GameObject("AcidemaQuirkPluginRunner");
+            runnerObj.AddComponent<AcidemaQuirkPluginRunner>();
+            UnityEngine.Object.DontDestroyOnLoad(runnerObj);
 
             var go = new GameObject("QuirkManager");
             go.AddComponent<QuirkManager>();
-            DontDestroyOnLoad(go);
+            UnityEngine.Object.DontDestroyOnLoad(go);
 
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll();
 
-            Log.LogInfo($"{PluginName} loaded. {QuirkRegistry.All.Count} quirks registered.");
+            Debug.Log($"{PluginName} loaded. {QuirkRegistry.All.Count} quirks registered.");
         }
 
-        private void OnDestroy() => _harmony?.UnpatchSelf();
+        internal class AcidemaQuirkPluginRunner : MonoBehaviour
+        {
+            private void Awake()
+            {
+                StartCoroutine(RegisterTraitsWhenReady());
+            }
+        }
 
         // ─────────────────────────────────────────
         //  Trait registration
@@ -65,11 +67,11 @@ namespace AcidemaQuirkMod
                 RegisterAcidEmissionTrait();
                 RegisterAcidicSkinTrait();
                 RegisterCorrosiveSalivaTrait();
-                Log.LogInfo("[Quirk] All traits registered successfully.");
+                Debug.Log("[Quirk] All traits registered successfully.");
             }
             catch (Exception e)
             {
-                Log.LogError($"[Quirk] Failed to register traits: {e.Message}\n{e.StackTrace}");
+                Debug.LogError($"[Quirk] Failed to register traits: {e.Message}\n{e.StackTrace}");
             }
         }
 
@@ -88,10 +90,20 @@ namespace AcidemaQuirkMod
             TrySetTraitMember(trait, "trait_box", groupName);
             TrySetTraitMember(trait, "box", groupName);
             TrySetTraitMember(trait, "showInEditor", true);
+            TrySetTraitMember(trait, "show_in_editor", true);
             TrySetTraitMember(trait, "isEditorTrait", true);
             TrySetTraitMember(trait, "showInTraitEditor", true);
+            TrySetTraitMember(trait, "show_in_trait_editor", true);
+            TrySetTraitMember(trait, "editorVisible", true);
+            TrySetTraitMember(trait, "displayInEditor", true);
+            TrySetTraitMember(trait, "is_visible", true);
+            TrySetTraitMember(trait, "visible", true);
+            TrySetTraitMember(trait, "showInUI", true);
+            TrySetTraitMember(trait, "showInTraitPanel", true);
+            TrySetTraitMember(trait, "traitEditorVisible", true);
             TrySetTraitMember(trait, "path_icon", iconPath);
             TrySetTraitMember(trait, "iconPath", iconPath);
+            TrySetTraitMember(trait, "icon", iconPath);
         }
 
         private static void TrySetTraitMember(dynamic trait, string memberName, object value)
@@ -173,6 +185,37 @@ namespace AcidemaQuirkMod
             return null;
         }
 
+        private static IEnumerator RegisterTraitsWhenReady()
+        {
+            int frameCount = 0;
+            while (frameCount < 300)
+            {
+                frameCount++;
+                if (TryRegisterTraits())
+                    yield break;
+
+                yield return null;
+            }
+
+            Debug.LogWarning("[Quirk] AssetManager.traits was not ready after waiting 300 frames.");
+        }
+
+        private static bool TryRegisterTraits()
+        {
+            try
+            {
+                dynamic traits = AssetManager.traits;
+                if (traits == null) return false;
+                RegisterTraits();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Quirk] AssetManager.traits not ready yet: {e.Message}");
+                return false;
+            }
+        }
+
         private static void RegisterAcidEmissionTrait()
         {
             // Don't register twice (e.g. on scene reload)
@@ -222,7 +265,7 @@ namespace AcidemaQuirkMod
             AssetManager.traits.add(trait);
             UnlockTrait(ACID_TRAIT_ID);
             AddTraitLocalization(ACID_TRAIT_ID, "Acid Emission", trait.description);
-            Log.LogInfo($"[Quirk] Registered trait: {ACID_TRAIT_ID}");
+            Debug.Log($"[Quirk] Registered trait: {ACID_TRAIT_ID}");
         }
 
         private static void RegisterAcidicSkinTrait()
@@ -254,7 +297,7 @@ namespace AcidemaQuirkMod
             AssetManager.traits.add(trait);
             UnlockTrait(ACIDIC_SKIN_TRAIT_ID);
             AddTraitLocalization(ACIDIC_SKIN_TRAIT_ID, "Acidic Skin", trait.description);
-            Log.LogInfo($"[Quirk] Registered trait: {ACIDIC_SKIN_TRAIT_ID}");
+            Debug.Log($"[Quirk] Registered trait: {ACIDIC_SKIN_TRAIT_ID}");
         }
 
         private static void RegisterCorrosiveSalivaTrait()
@@ -286,7 +329,7 @@ namespace AcidemaQuirkMod
             AssetManager.traits.add(trait);
             UnlockTrait(CORROSIVE_SALIVA_TRAIT_ID);
             AddTraitLocalization(CORROSIVE_SALIVA_TRAIT_ID, "Corrosive Saliva", trait.description);
-            Log.LogInfo($"[Quirk] Registered trait: {CORROSIVE_SALIVA_TRAIT_ID}");
+            Debug.Log($"[Quirk] Registered trait: {CORROSIVE_SALIVA_TRAIT_ID}");
         }
     }
 
@@ -318,8 +361,7 @@ namespace AcidemaQuirkMod
             if (QuirkManager.Instance.TryGetQuirk(unitId, out _)) return;
 
             QuirkManager.Instance.AssignQuirk(unitId, AcidemaQuirkPlugin.ACID_TRAIT_ID);
-            AcidemaQuirkPlugin.Log.LogInfo(
-                $"[Quirk] acid_emission trait detected on {unitId} — QuirkInstance created.");
+            Debug.Log($"[Quirk] acid_emission trait detected on {unitId} — QuirkInstance created.");
         }
     }
 
@@ -340,8 +382,7 @@ namespace AcidemaQuirkMod
             QuirkManager.Instance.Deactivate(unitId);
             QuirkManager.Instance.RemoveQuirk(unitId);
 
-            AcidemaQuirkPlugin.Log.LogInfo(
-                $"[Quirk] acid_emission removed from {unitId} — QuirkInstance cleaned up.");
+            Debug.Log($"[Quirk] acid_emission removed from {unitId} — QuirkInstance cleaned up.");
         }
     }
 
@@ -366,8 +407,7 @@ namespace AcidemaQuirkMod
                 {
                     QuirkManager.Instance.AssignQuirk(
                         unitId, AcidemaQuirkPlugin.ACID_TRAIT_ID);
-                    AcidemaQuirkPlugin.Log.LogInfo(
-                        $"[Quirk] Safety-sync: registered {unitId} from save/load.");
+                    Debug.Log($"[Quirk] Safety-sync: registered {unitId} from save/load.");
                 }
             }
 
