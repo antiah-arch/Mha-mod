@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using System.Reflection;
 using UnityEngine;
 using AcidemaQuirkMod.Core;
 using AcidemaQuirkMod.Systems;
@@ -70,6 +71,42 @@ namespace AcidemaQuirkMod
             }
         }
 
+        private static void SetTraitEditorGroup(dynamic trait)
+        {
+            const string groupName = "Acidema Quirk Traits";
+
+            TrySetTraitMember(trait, "traitCategory", groupName);
+            TrySetTraitMember(trait, "category", groupName);
+            TrySetTraitMember(trait, "editorCategory", groupName);
+            TrySetTraitMember(trait, "traitGroup", groupName);
+            TrySetTraitMember(trait, "group", groupName);
+            TrySetTraitMember(trait, "tab", groupName);
+            TrySetTraitMember(trait, "trait_box", groupName);
+            TrySetTraitMember(trait, "box", groupName);
+            TrySetTraitMember(trait, "showInEditor", true);
+            TrySetTraitMember(trait, "isEditorTrait", true);
+        }
+
+        private static void TrySetTraitMember(dynamic trait, string memberName, object value)
+        {
+            if (trait == null || string.IsNullOrEmpty(memberName)) return;
+
+            object? traitObj = trait;
+            var type = traitObj?.GetType();
+            if (type == null) return;
+
+            var field = type.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            if (field != null)
+            {
+                field.SetValue(traitObj, value);
+                return;
+            }
+
+            var prop = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            if (prop != null && prop.CanWrite)
+                prop.SetValue(traitObj, value, null);
+        }
+
         private static void RegisterAcidEmissionTrait()
         {
             // Don't register twice (e.g. on scene reload)
@@ -99,6 +136,9 @@ namespace AcidemaQuirkMod
                 baseStats.critical_damage_multiplier = 1.05f;
                 trait.base_stats = baseStats;
             }
+
+            // Trait editor grouping
+            SetTraitEditorGroup(trait);
 
             // Trait flags
             trait.is_weapon_trait = false;
@@ -137,6 +177,7 @@ namespace AcidemaQuirkMod
                 trait.base_stats = baseStats;
             }
 
+            SetTraitEditorGroup(trait);
             trait.is_weapon_trait = false;
             trait.can_receive_traits = true;
             trait.can_edit_traits = false;
@@ -165,6 +206,7 @@ namespace AcidemaQuirkMod
                 trait.base_stats = baseStats;
             }
 
+            SetTraitEditorGroup(trait);
             trait.is_weapon_trait = true;
             trait.can_receive_traits = true;
             trait.can_edit_traits = false;
