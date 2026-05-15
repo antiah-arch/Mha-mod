@@ -49,7 +49,7 @@ namespace AcidemaQuirkMod.Core
     [Serializable]
     public class QuirkFactor
     {
-        public string QuirkId;
+        public string? QuirkId;
         public QuirkType Type;
         public float PowerPotential;   // 0–1  how strong this factor can grow
         public float BodyCompatibility; // 0–1  how well the body handles the power
@@ -71,12 +71,12 @@ namespace AcidemaQuirkMod.Core
     [Serializable]
     public class QuirkDefinition
     {
-        public string Id;
-        public string DisplayName;
-        public string Description;
+        public string? Id;
+        public string? DisplayName;
+        public string? Description;
         public QuirkType Type;
         public ActivationType Activation;
-        public QuirkFactor Factor;
+        public QuirkFactor? Factor;
 
         // Stat modifiers applied when the quirk is active
         public QuirkStatModifiers BaseModifiers = new QuirkStatModifiers();
@@ -158,9 +158,9 @@ namespace AcidemaQuirkMod.Core
     [Serializable]
     public class QuirkInstance
     {
-        public string         QuirkId;
-        public QuirkDefinition Definition;
-        public QuirkFactor    Factor;
+        public string?         QuirkId;
+        public QuirkDefinition? Definition;
+        public QuirkFactor? Factor;
 
         // Progression
         public int            XP             = 0;
@@ -187,6 +187,7 @@ namespace AcidemaQuirkMod.Core
         public QuirkStatModifiers GetCurrentModifiers()
         {
             var def = Definition;
+            if (def == null) return new QuirkStatModifiers();
             var base_ = def.BaseModifiers;
 
             if (!def.RankScaling.TryGetValue(CurrentRank, out var scale))

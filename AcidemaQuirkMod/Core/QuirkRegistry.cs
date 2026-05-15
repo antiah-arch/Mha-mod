@@ -29,7 +29,11 @@ namespace AcidemaQuirkMod.Core
             // Add more quirks below as the mod grows
         }
 
-        public static void Register(QuirkDefinition quirk) => _quirks[quirk.Id] = quirk;
+        public static void Register(QuirkDefinition quirk)
+        {
+            if (string.IsNullOrEmpty(quirk.Id)) return;
+            _quirks[quirk.Id!] = quirk;
+        }
 
         public static bool TryGet(string id, out QuirkDefinition def)
             => _quirks.TryGetValue(id, out def);

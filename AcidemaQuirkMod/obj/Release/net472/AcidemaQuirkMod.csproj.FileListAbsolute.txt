@@ -4,7 +4,6 @@ c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\obj\Release\net472\Acid
 c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\obj\Release\net472\AcidemaQuirkMod.AssemblyInfo.cs
 c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\obj\Release\net472\AcidemaQuirkMod.csproj.CoreCompileInputs.cache
 c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\obj\Release\net472\AcidemaQuirkMod.sourcelink.json
-c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Release\net472\Data\traits.json
 c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Release\net472\AcidemaQuirkMod.dll
 c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Release\net472\AcidemaQuirkMod.pdb
 c:\Users\antho\Downloads\mha_mod\Mha-mod\AcidemaQuirkMod\bin\Release\net472\0Harmony.dll

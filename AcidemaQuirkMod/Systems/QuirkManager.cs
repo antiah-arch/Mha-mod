@@ -49,7 +49,7 @@ namespace AcidemaQuirkMod.Systems
         //  Registration
         // ─────────────────────────────────────────
 
-        public QuirkInstance AssignQuirk(string unitId, string quirkId)
+        public QuirkInstance? AssignQuirk(string unitId, string quirkId)
         {
             if (!QuirkRegistry.TryGet(quirkId, out var def))
             {
@@ -71,9 +71,10 @@ namespace AcidemaQuirkMod.Systems
 
             // Apply passive mutation traits to the unit via addActorTrait
             dynamic actor = GetActor(unitId);
-            if (actor != null && def.Factor?.PassiveMutations != null)
+            var mutations = def.Factor?.PassiveMutations;
+            if (actor != null && mutations != null)
             {
-                foreach (var mutationId in def.Factor.PassiveMutations)
+                foreach (var mutationId in mutations)
                 {
                     var trait = WorldBoxApi.GetTrait(mutationId);
                     if (trait != null && !WorldBoxApi.ActorHasTrait(actor, mutationId))
@@ -140,6 +141,7 @@ namespace AcidemaQuirkMod.Systems
 
         private void TickActive(string unitId, QuirkInstance q, float dt)
         {
+            if (q.Definition == null) return;
             var d = q.Definition.Drawback;
 
             // Stamina drain
@@ -315,7 +317,8 @@ namespace AcidemaQuirkMod.Systems
             if (string.IsNullOrEmpty(unitId)) return null;
             foreach (dynamic actor in WorldBoxApi.GetWorldActors())
             {
-                if (WorldBoxApi.GetActorId(actor) == unitId)
+                string? actorId = WorldBoxApi.GetActorId(actor);
+                if (!string.IsNullOrEmpty(actorId) && actorId == unitId)
                     return actor;
             }
             return null;

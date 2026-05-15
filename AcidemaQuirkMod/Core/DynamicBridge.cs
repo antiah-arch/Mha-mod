@@ -6,7 +6,7 @@ namespace AcidemaQuirkMod.Core
 {
     internal static class DynamicBridge
     {
-        public static object GetMemberValue(object target, string member)
+        public static object? GetMemberValue(object target, string member)
         {
             if (target == null || string.IsNullOrEmpty(member)) return null;
             var type = target.GetType();
@@ -17,7 +17,7 @@ namespace AcidemaQuirkMod.Core
             return null;
         }
 
-        public static object CallInstanceMethod(object target, string methodName, params object[] args)
+        public static object? CallInstanceMethod(object target, string methodName, params object[] args)
         {
             if (target == null || string.IsNullOrEmpty(methodName)) return null;
             var type = target.GetType();
@@ -26,7 +26,7 @@ namespace AcidemaQuirkMod.Core
             return method?.Invoke(target, args);
         }
 
-        public static object CallStaticMethod(string typeName, string methodName, params object[] args)
+        public static object? CallStaticMethod(string typeName, string methodName, params object[] args)
         {
             if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(methodName)) return null;
             var type = FindType(typeName);

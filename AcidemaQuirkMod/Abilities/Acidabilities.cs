@@ -7,6 +7,7 @@ using AcidemaQuirkMod.Systems;
 
 namespace AcidemaQuirkMod.Abilities
 {
+#pragma warning disable CS8602 // Dereference of possibly null reference - suppressed for dynamic caster checks
     /// <summary>
     /// All Acid Emission abilities with full animations.
     ///
@@ -447,4 +448,5 @@ namespace AcidemaQuirkMod.Abilities
         private static void ConsumeEnergy(QuirkInstance q, float amount)
             => q.Energy = Mathf.Max(0f, q.Energy - amount);
     }
+#pragma warning restore CS8602
 }

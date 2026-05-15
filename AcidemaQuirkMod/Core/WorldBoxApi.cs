@@ -14,7 +14,7 @@ namespace AcidemaQuirkMod.Core
             traits.loadFromJson(json);
         }
 
-        public static object GetTrait(string traitId)
+        public static object? GetTrait(string traitId)
         {
             if (string.IsNullOrEmpty(traitId)) return null;
             return AssetManager.traits.get(traitId);
@@ -22,16 +22,16 @@ namespace AcidemaQuirkMod.Core
 
         public static bool TryGetActorId(object actor, out string unitId)
         {
-            unitId = null;
+            unitId = null!;
             if (actor == null) return false;
             unitId = GetMember<string>(actor, "data", "id");
             return !string.IsNullOrEmpty(unitId);
         }
 
-        public static string GetActorId(object actor)
+        public static string? GetActorId(object actor)
             => GetMember<string>(actor, "data", "id");
 
-        public static string GetActorKillActionId(object actor)
+        public static string? GetActorKillActionId(object actor)
             => GetMember<string>(actor, "data", "kill_action", "id");
 
         public static float GetActorHealth(object actor)
@@ -51,7 +51,9 @@ namespace AcidemaQuirkMod.Core
         public static void SetActorArmor(object actor, float value)
         {
             if (actor == null) return;
-            var stats = DynamicBridge.GetMemberValue(DynamicBridge.GetMemberValue(actor, "data"), "stats");
+            var data = DynamicBridge.GetMemberValue(actor, "data");
+            if (data == null) return;
+            var stats = DynamicBridge.GetMemberValue(data, "stats");
             if (stats == null) return;
             var type = stats.GetType();
             var field = type.GetField("armor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
@@ -83,7 +85,7 @@ namespace AcidemaQuirkMod.Core
             DynamicBridge.CallInstanceMethod(actor, "addActorTrait", trait);
         }
 
-        public static object GetActorCurrentTile(object actor)
+        public static object? GetActorCurrentTile(object actor)
             => GetMember<object>(actor, "currentTile");
 
         public static IEnumerable<dynamic> GetTilesAround(object centerTile, int radius)

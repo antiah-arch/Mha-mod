@@ -1,23 +1,17 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using System.IO;
 using UnityEngine;
 using AcidemaQuirkMod.Core;
 using AcidemaQuirkMod.Systems;
+using AcidemaQuirkMod.Abilities;
 
 namespace AcidemaQuirkMod
 {
     /// <summary>
-    /// Main BepInEx plugin entry point.
-    ///
-    /// How the trait→quirk system works:
-    ///   1. traits.json defines "acid_emission" as a real WorldBox ActorTrait.
-    ///   2. Any unit that gains the trait (via editor, spawn, book, inheritance)
-    ///      is automatically synced into QuirkManager by Patch_TraitSync.
-    ///   3. WorldBox's own traitsInherit system handles children naturally —
-    ///      no custom hereditary code needed.
-    ///   4. If the trait is removed, the quirk instance is also removed.
+    /// WorldBox does not load traits from plain JSON files in mods.
+    /// Traits are registered by directly constructing ActorTrait objects
+    /// and adding them to AssetManager.traits at startup.
     /// </summary>
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
     public class AcidemaQuirkPlugin : BaseUnityPlugin
@@ -26,10 +20,12 @@ namespace AcidemaQuirkMod
         public const string PluginName    = "Acidema Quirk Mod";
         public const string PluginVersion = "1.1.0";
 
-        internal static ManualLogSource Log;
-        private Harmony _harmony;
+        internal static ManualLogSource Log = null!;
+        private Harmony _harmony = null!;
 
-        public const string ACID_TRAIT_ID = "acid_emission";
+        public const string ACID_TRAIT_ID           = "acid_emission";
+        public const string ACIDIC_SKIN_TRAIT_ID    = "acidic_skin";
+        public const string CORROSIVE_SALIVA_TRAIT_ID = "corrosive_saliva";
 
         private void Awake()
         {
@@ -38,11 +34,12 @@ namespace AcidemaQuirkMod
 
             QuirkRegistry.Initialize();
 
+            // Register traits directly into WorldBox's AssetManager
+            RegisterTraits();
+
             var go = new GameObject("QuirkManager");
             go.AddComponent<QuirkManager>();
             DontDestroyOnLoad(go);
-
-            LoadTraits();
 
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll();
@@ -52,25 +49,137 @@ namespace AcidemaQuirkMod
 
         private void OnDestroy() => _harmony?.UnpatchSelf();
 
-        private void LoadTraits()
+        // ─────────────────────────────────────────
+        //  Trait registration
+        //  Constructs ActorTrait objects and adds them
+        //  directly to AssetManager.traits library.
+        // ─────────────────────────────────────────
+
+        private void RegisterTraits()
         {
-            string path = Path.Combine(Paths.PluginPath,
-                "AcidemaQuirkMod", "traits.json");
-            string json = File.ReadAllText(path);
-            // Load into WorldBox's trait library using runtime dispatch
-            WorldBoxApi.LoadTraitJson(json);
+            try
+            {
+                RegisterAcidEmissionTrait();
+                RegisterAcidicSkinTrait();
+                RegisterCorrosiveSalivaTrait();
+                Log.LogInfo("[Quirk] All traits registered successfully.");
+            }
+            catch (System.Exception e)
+            {
+                Log.LogError($"[Quirk] Failed to register traits: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private static void RegisterAcidEmissionTrait()
+        {
+            // Don't register twice (e.g. on scene reload)
+            if (AssetManager.traits.get(ACID_TRAIT_ID) != null) return;
+
+            // Use reflection to create ActorTrait
+            var traitType = typeof(Actor).Assembly.GetType("ActorTrait");
+            if (traitType == null) return;
+            dynamic trait = System.Activator.CreateInstance(traitType);
+
+            trait.id = ACID_TRAIT_ID;
+            trait.name = "Acid Emission";
+            trait.description = "Generates and controls corrosive acid. " +
+                                "Body chemistry resists acid naturally, but overuse " +
+                                "dissolves even their hardened tissues.";
+
+            // base_stats — use reflection
+            var baseStatsType = typeof(Actor).Assembly.GetType("BaseStats");
+            if (baseStatsType != null)
+            {
+                dynamic baseStats = System.Activator.CreateInstance(baseStatsType);
+                baseStats.damage = 1.25f;
+                baseStats.armor = 0.9f;
+                baseStats.health = 0.95f;
+                baseStats.speed = 1.0f;
+                baseStats.attackRange = 1.5f;
+                baseStats.critical_damage_multiplier = 1.05f;
+                trait.base_stats = baseStats;
+            }
+
+            // Trait flags
+            trait.is_weapon_trait = false;
+            trait.can_receive_traits = true;
+            trait.can_edit_traits = true;
+            trait.spawn_random_trait_allowed = false;
+
+            // Sub-traits applied alongside this one
+            trait.effects_traits = new System.Collections.Generic.List<string>
+            {
+                ACIDIC_SKIN_TRAIT_ID,
+                CORROSIVE_SALIVA_TRAIT_ID
+            };
+
+            AssetManager.traits.add(trait);
+            Log.LogInfo($"[Quirk] Registered trait: {ACID_TRAIT_ID}");
+        }
+
+        private static void RegisterAcidicSkinTrait()
+        {
+            if (AssetManager.traits.get(ACIDIC_SKIN_TRAIT_ID) != null) return;
+
+            var traitType = typeof(Actor).Assembly.GetType("ActorTrait");
+            if (traitType == null) return;
+            dynamic trait = System.Activator.CreateInstance(traitType);
+            trait.id = ACIDIC_SKIN_TRAIT_ID;
+            trait.name = "Acidic Skin";
+            trait.description = "Skin secretes acid on contact. " +
+                                "Melee attackers take damage and have their armor corroded.";
+
+            var baseStatsType = typeof(Actor).Assembly.GetType("BaseStats");
+            if (baseStatsType != null)
+            {
+                dynamic baseStats = System.Activator.CreateInstance(baseStatsType);
+                baseStats.armor = 0.85f;
+                trait.base_stats = baseStats;
+            }
+
+            trait.is_weapon_trait = false;
+            trait.can_receive_traits = true;
+            trait.can_edit_traits = false;
+            trait.spawn_random_trait_allowed = false;
+
+            AssetManager.traits.add(trait);
+            Log.LogInfo($"[Quirk] Registered trait: {ACIDIC_SKIN_TRAIT_ID}");
+        }
+
+        private static void RegisterCorrosiveSalivaTrait()
+        {
+            if (AssetManager.traits.get(CORROSIVE_SALIVA_TRAIT_ID) != null) return;
+
+            var traitType = typeof(Actor).Assembly.GetType("ActorTrait");
+            if (traitType == null) return;
+            dynamic trait = System.Activator.CreateInstance(traitType);
+            trait.id = CORROSIVE_SALIVA_TRAIT_ID;
+            trait.name = "Corrosive Saliva";
+            trait.description = "Bite attacks apply an acid debuff that melts armor over time.";
+
+            var baseStatsType = typeof(Actor).Assembly.GetType("BaseStats");
+            if (baseStatsType != null)
+            {
+                dynamic baseStats = System.Activator.CreateInstance(baseStatsType);
+                baseStats.damage = 1.1f;
+                trait.base_stats = baseStats;
+            }
+
+            trait.is_weapon_trait = true;
+            trait.can_receive_traits = true;
+            trait.can_edit_traits = false;
+            trait.spawn_random_trait_allowed = false;
+            trait.give_status_id = "poisoned";
+
+            AssetManager.traits.add(trait);
+            Log.LogInfo($"[Quirk] Registered trait: {CORROSIVE_SALIVA_TRAIT_ID}");
         }
     }
 
     // ─────────────────────────────────────────────────────────────
     //  PATCH 1 — Actor.addActorTrait(ActorTrait)
-    //
     //  Fires whenever any trait is added to any actor.
-    //  If the added trait is "acid_emission", we register the
-    //  actor into QuirkManager so the full system activates.
-    //
-    //  addActorTrait — confirmed method in Actor (Assembly-CSharp)
-    //  ActorTrait.id — confirmed field in ActorTrait / BaseTrait
+    //  If the trait is acid_emission, register a QuirkInstance.
     // ─────────────────────────────────────────────────────────────
 
     [HarmonyPatch(typeof(Actor), "addActorTrait")]
@@ -82,7 +191,6 @@ namespace AcidemaQuirkMod
             if (pTrait == null || pTrait.id != AcidemaQuirkPlugin.ACID_TRAIT_ID) return;
             if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
-            // Don't double-register
             if (QuirkManager.Instance.TryGetQuirk(unitId, out _)) return;
 
             QuirkManager.Instance.AssignQuirk(unitId, AcidemaQuirkPlugin.ACID_TRAIT_ID);
@@ -93,11 +201,7 @@ namespace AcidemaQuirkMod
 
     // ─────────────────────────────────────────────────────────────
     //  PATCH 2 — Actor.removeTrait(ActorTrait)
-    //
-    //  If the acid_emission trait is removed, clean up the
-    //  QuirkInstance so no orphaned state remains.
-    //
-    //  removeTrait — confirmed method in Actor (Assembly-CSharp)
+    //  Cleans up QuirkInstance when trait is removed.
     // ─────────────────────────────────────────────────────────────
 
     [HarmonyPatch(typeof(Actor), "removeTrait")]
@@ -113,21 +217,13 @@ namespace AcidemaQuirkMod
             QuirkManager.Instance.RemoveQuirk(unitId);
 
             AcidemaQuirkPlugin.Log.LogInfo(
-                $"[Quirk] acid_emission trait removed from {unitId} — QuirkInstance cleaned up.");
+                $"[Quirk] acid_emission removed from {unitId} — QuirkInstance cleaned up.");
         }
     }
 
     // ─────────────────────────────────────────────────────────────
     //  PATCH 3 — Actor.updateStatus()
-    //
-    //  Called every update cycle for each actor.
-    //  We use this to:
-    //    a) Safety-sync: catch any actor that has the trait but
-    //       no QuirkInstance yet (e.g. loaded from a save file).
-    //    b) Tick the acid aura if the unit has it active.
-    //
-    //  updateStatus — confirmed method in Actor (Assembly-CSharp)
-    //  actor.hasTrait(string) — confirmed method
+    //  Safety sync for save/load + ticks acid aura each frame.
     // ─────────────────────────────────────────────────────────────
 
     [HarmonyPatch(typeof(Actor), "updateStatus")]
@@ -139,8 +235,8 @@ namespace AcidemaQuirkMod
             if (!WorldBoxApi.IsActorAlive(__instance)) return;
             if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
-            // Safety sync — hasTrait confirmed in Assembly-CSharp
-            if (__instance.hasTrait(AcidemaQuirkPlugin.ACID_TRAIT_ID))
+            // Safety sync — catches actors loaded from save files
+            if (WorldBoxApi.ActorHasTrait(__instance, AcidemaQuirkPlugin.ACID_TRAIT_ID))
             {
                 if (!QuirkManager.Instance.TryGetQuirk(unitId, out _))
                 {
@@ -153,16 +249,13 @@ namespace AcidemaQuirkMod
 
             // Tick acid aura (Rank S+)
             if (QuirkManager.Instance.HasAbility(unitId, "acid_aura"))
-                Abilities.AcidAbilities.TickAcidAura(unitId, Time.deltaTime);
+                AcidAbilities.TickAcidAura(unitId, Time.deltaTime);
         }
     }
 
     // ─────────────────────────────────────────────────────────────
     //  PATCH 4 — Actor.unitDied()
-    //
-    //  Fires when a unit dies. Awards kill XP to the killer.
-    //  unitDied — confirmed method in Actor (Assembly-CSharp)
-    //  actor.data.kill_action.id — confirmed field path
+    //  Awards kill XP to the killer.
     // ─────────────────────────────────────────────────────────────
 
     [HarmonyPatch(typeof(Actor), "unitDied")]
@@ -171,42 +264,29 @@ namespace AcidemaQuirkMod
         [HarmonyPostfix]
         public static void Postfix(Actor __instance)
         {
-            if (!WorldBoxApi.TryGetActorId(__instance, out _)) return;
-
-            string killerId = WorldBoxApi.GetActorKillActionId(__instance);
+            string? killerId = WorldBoxApi.GetActorKillActionId(__instance);
             if (!string.IsNullOrEmpty(killerId))
-                QuirkManager.Instance.RegisterKill(killerId);
+                QuirkManager.Instance.RegisterKill(killerId!);
         }
     }
 
     // ─────────────────────────────────────────────────────────────
     //  PATCH 5 — Actor.getHit(float)
-    //
-    //  Fires every time a unit takes damage.
-    //  PREFIX:  scales outgoing damage by quirk modifier.
-    //  POSTFIX: checks for near-death to trigger Awakening stress.
-    //
-    //  getHit — confirmed method in Actor (Assembly-CSharp)
-    //  actor.data.health / actor.getMaxHealth() — confirmed
+    //  Detects near-death for Awakening stress trigger.
     // ─────────────────────────────────────────────────────────────
 
     [HarmonyPatch(typeof(Actor), "getHit")]
     public static class Patch_GetHit
     {
-        // Scale damage if the ATTACKER has the acid quirk active
-        // (We intercept via Actor.damage patch below for attacker scaling)
-
         [HarmonyPostfix]
         public static void Postfix(Actor __instance)
         {
             if (!WorldBoxApi.IsActorAlive(__instance)) return;
-            string unitId = WorldBoxApi.GetActorId(__instance);
-            if (string.IsNullOrEmpty(unitId)) return;
+            if (!WorldBoxApi.TryGetActorId(__instance, out string unitId)) return;
 
             float hp    = WorldBoxApi.GetActorHealth(__instance);
             float maxHp = WorldBoxApi.GetActorMaxHealth(__instance);
 
-            // Near-death threshold: below 10% HP
             if (maxHp > 0f && (hp / maxHp) < 0.10f)
                 QuirkManager.Instance.RegisterNearDeath(unitId);
         }
@@ -214,11 +294,7 @@ namespace AcidemaQuirkMod
 
     // ─────────────────────────────────────────────────────────────
     //  PATCH 6 — Actor.damage(float)
-    //
-    //  Fires when an actor deals damage.
-    //  Scales pDamage by the attacker's active quirk multiplier.
-    //
-    //  damage — confirmed method in Actor (Assembly-CSharp)
+    //  Scales outgoing damage by the attacker's quirk multiplier.
     // ─────────────────────────────────────────────────────────────
 
     [HarmonyPatch(typeof(Actor), "damage")]
