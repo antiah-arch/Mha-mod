@@ -1,6 +1,8 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using System;
+using System.Collections;
 using System.Reflection;
 using UnityEngine;
 using AcidemaQuirkMod.Core;
@@ -56,7 +58,7 @@ namespace AcidemaQuirkMod
         //  directly to AssetManager.traits library.
         // ─────────────────────────────────────────
 
-        private void RegisterTraits()
+        internal static void RegisterTraits()
         {
             try
             {
@@ -65,7 +67,7 @@ namespace AcidemaQuirkMod
                 RegisterCorrosiveSalivaTrait();
                 Log.LogInfo("[Quirk] All traits registered successfully.");
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Log.LogError($"[Quirk] Failed to register traits: {e.Message}\n{e.StackTrace}");
             }
@@ -74,17 +76,22 @@ namespace AcidemaQuirkMod
         private static void SetTraitEditorGroup(dynamic trait)
         {
             const string groupName = "Acidema Quirk Traits";
+            const string iconPath = "ui/icons/achievements/achievements_thedemon";
 
             TrySetTraitMember(trait, "traitCategory", groupName);
             TrySetTraitMember(trait, "category", groupName);
             TrySetTraitMember(trait, "editorCategory", groupName);
             TrySetTraitMember(trait, "traitGroup", groupName);
+            TrySetTraitMember(trait, "editorGroup", groupName);
             TrySetTraitMember(trait, "group", groupName);
             TrySetTraitMember(trait, "tab", groupName);
             TrySetTraitMember(trait, "trait_box", groupName);
             TrySetTraitMember(trait, "box", groupName);
             TrySetTraitMember(trait, "showInEditor", true);
             TrySetTraitMember(trait, "isEditorTrait", true);
+            TrySetTraitMember(trait, "showInTraitEditor", true);
+            TrySetTraitMember(trait, "path_icon", iconPath);
+            TrySetTraitMember(trait, "iconPath", iconPath);
         }
 
         private static void TrySetTraitMember(dynamic trait, string memberName, object value)
@@ -105,6 +112,65 @@ namespace AcidemaQuirkMod
             var prop = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
             if (prop != null && prop.CanWrite)
                 prop.SetValue(traitObj, value, null);
+        }
+
+        private static void UnlockTrait(string traitId)
+        {
+            if (string.IsNullOrEmpty(traitId)) return;
+            DynamicBridge.CallStaticMethod("PlayerConfig", "unlockTrait", traitId);
+        }
+
+        private static void AddTraitLocalization(string id, string displayName, string description)
+        {
+            if (string.IsNullOrEmpty(id)) return;
+
+            var localizedTextManagerType = FindType("LocalizedTextManager");
+            if (localizedTextManagerType == null) return;
+
+            object? instance = null;
+            var instanceProp = localizedTextManagerType.GetProperty("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            if (instanceProp != null)
+                instance = instanceProp.GetValue(null);
+            if (instance == null)
+            {
+                var instanceField = localizedTextManagerType.GetField("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                if (instanceField != null)
+                    instance = instanceField.GetValue(null);
+            }
+
+            if (instance == null) return;
+
+            var localizedText = DynamicBridge.GetMemberValue(instance, "localizedText")
+                               ?? DynamicBridge.GetMemberValue(instance, "localizedTexts")
+                               ?? DynamicBridge.GetMemberValue(instance, "localizedString")
+                               ?? DynamicBridge.GetMemberValue(instance, "dictionary");
+
+            if (localizedText is IDictionary dict)
+            {
+                AddDictionaryEntry(dict, "trait_" + id, displayName);
+                AddDictionaryEntry(dict, "trait_" + id + "_info", description);
+            }
+        }
+
+        private static void AddDictionaryEntry(IDictionary dict, string key, string value)
+        {
+            if (dict.Contains(key)) return;
+            dict.Add(key, value);
+        }
+
+        private static Type? FindType(string typeName)
+        {
+            if (string.IsNullOrEmpty(typeName)) return null;
+            var type = Type.GetType(typeName);
+            if (type != null) return type;
+
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                type = asm.GetType(typeName);
+                if (type != null) return type;
+            }
+
+            return null;
         }
 
         private static void RegisterAcidEmissionTrait()
@@ -154,6 +220,8 @@ namespace AcidemaQuirkMod
             };
 
             AssetManager.traits.add(trait);
+            UnlockTrait(ACID_TRAIT_ID);
+            AddTraitLocalization(ACID_TRAIT_ID, "Acid Emission", trait.description);
             Log.LogInfo($"[Quirk] Registered trait: {ACID_TRAIT_ID}");
         }
 
@@ -184,6 +252,8 @@ namespace AcidemaQuirkMod
             trait.spawn_random_trait_allowed = false;
 
             AssetManager.traits.add(trait);
+            UnlockTrait(ACIDIC_SKIN_TRAIT_ID);
+            AddTraitLocalization(ACIDIC_SKIN_TRAIT_ID, "Acidic Skin", trait.description);
             Log.LogInfo($"[Quirk] Registered trait: {ACIDIC_SKIN_TRAIT_ID}");
         }
 
@@ -214,7 +284,19 @@ namespace AcidemaQuirkMod
             trait.give_status_id = "poisoned";
 
             AssetManager.traits.add(trait);
+            UnlockTrait(CORROSIVE_SALIVA_TRAIT_ID);
+            AddTraitLocalization(CORROSIVE_SALIVA_TRAIT_ID, "Corrosive Saliva", trait.description);
             Log.LogInfo($"[Quirk] Registered trait: {CORROSIVE_SALIVA_TRAIT_ID}");
+        }
+    }
+
+    [HarmonyPatch(typeof(ActorTraitLibrary), MethodType.Constructor)]
+    public static class Patch_AssetsLoaded
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            AcidemaQuirkPlugin.RegisterTraits();
         }
     }
 
