@@ -1,11 +1,11 @@
 {
   "version": 3,
   "targets": {
-    ".NETFramework,Version=v4.7.2": {}
+    ".NETFramework,Version=v4.8": {}
   },
   "libraries": {},
   "projectFileDependencyGroups": {
-    ".NETFramework,Version=v4.7.2": []
+    ".NETFramework,Version=v4.8": []
   },
   "packageFolders": {
     "C:\\Users\\antho\\.nuget\\packages\\": {}
@@ -13,26 +13,26 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
+      "projectUniqueName": "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
       "projectName": "AcidemaQuirkMod",
-      "projectPath": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
+      "projectPath": "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\AcidemaQuirkMod.csproj",
       "packagesPath": "C:\\Users\\antho\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\obj\\",
+      "outputPath": "C:\\Users\\antho\\Downloads\\mha_mod\\Mha-mod\\AcidemaQuirkMod\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\antho\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
-        "net472"
+        "net48"
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net472": {
-          "targetAlias": "net472",
+        "net48": {
+          "targetAlias": "net48",
           "projectReferences": {}
         }
       },
@@ -49,8 +49,8 @@
       "SdkAnalysisLevel": "10.0.200"
     },
     "frameworks": {
-      "net472": {
-        "targetAlias": "net472",
+      "net48": {
+        "targetAlias": "net48",
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201\\RuntimeIdentifierGraph.json"
       }
     }

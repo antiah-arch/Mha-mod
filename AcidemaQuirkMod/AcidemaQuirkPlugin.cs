@@ -1,7 +1,8 @@
 using HarmonyLib;
+using NeoModLoader.General;
+using NeoModLoader.services;
 using System;
 using System.Collections;
-using System.Reflection;
 using UnityEngine;
 using AcidemaQuirkMod.Core;
 using AcidemaQuirkMod.Systems;
@@ -25,10 +26,9 @@ namespace AcidemaQuirkMod
         public const string ACIDIC_SKIN_TRAIT_ID    = "acidic_skin";
         public const string CORROSIVE_SALIVA_TRAIT_ID = "corrosive_saliva";
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Initialize()
+        public static void Register()
         {
-            Debug.Log($"{PluginName} v{PluginVersion} loading...");
+            LogService.LogInfo($"{PluginName} v{PluginVersion} loading...");
 
             QuirkRegistry.Initialize();
 
@@ -43,7 +43,7 @@ namespace AcidemaQuirkMod
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll();
 
-            Debug.Log($"{PluginName} loaded. {QuirkRegistry.All.Count} quirks registered.");
+            LogService.LogInfo($"{PluginName} loaded. {QuirkRegistry.All.Count} quirks registered.");
         }
 
         internal class AcidemaQuirkPluginRunner : MonoBehaviour
@@ -67,122 +67,13 @@ namespace AcidemaQuirkMod
                 RegisterAcidEmissionTrait();
                 RegisterAcidicSkinTrait();
                 RegisterCorrosiveSalivaTrait();
-                Debug.Log("[Quirk] All traits registered successfully.");
+                LM.ApplyLocale(true);
+                LogService.LogInfo("[Quirk] All traits registered successfully.");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[Quirk] Failed to register traits: {e.Message}\n{e.StackTrace}");
+                LogService.LogError($"[Quirk] Failed to register traits: {e.Message}\n{e.StackTrace}");
             }
-        }
-
-        private static void SetTraitEditorGroup(dynamic trait)
-        {
-            const string groupName = "Acidema Quirk Traits";
-            const string iconPath = "ui/icons/achievements/achievements_thedemon";
-
-            TrySetTraitMember(trait, "traitCategory", groupName);
-            TrySetTraitMember(trait, "category", groupName);
-            TrySetTraitMember(trait, "editorCategory", groupName);
-            TrySetTraitMember(trait, "traitGroup", groupName);
-            TrySetTraitMember(trait, "editorGroup", groupName);
-            TrySetTraitMember(trait, "group", groupName);
-            TrySetTraitMember(trait, "tab", groupName);
-            TrySetTraitMember(trait, "trait_box", groupName);
-            TrySetTraitMember(trait, "box", groupName);
-            TrySetTraitMember(trait, "showInEditor", true);
-            TrySetTraitMember(trait, "show_in_editor", true);
-            TrySetTraitMember(trait, "isEditorTrait", true);
-            TrySetTraitMember(trait, "showInTraitEditor", true);
-            TrySetTraitMember(trait, "show_in_trait_editor", true);
-            TrySetTraitMember(trait, "editorVisible", true);
-            TrySetTraitMember(trait, "displayInEditor", true);
-            TrySetTraitMember(trait, "is_visible", true);
-            TrySetTraitMember(trait, "visible", true);
-            TrySetTraitMember(trait, "showInUI", true);
-            TrySetTraitMember(trait, "showInTraitPanel", true);
-            TrySetTraitMember(trait, "traitEditorVisible", true);
-            TrySetTraitMember(trait, "path_icon", iconPath);
-            TrySetTraitMember(trait, "iconPath", iconPath);
-            TrySetTraitMember(trait, "icon", iconPath);
-        }
-
-        private static void TrySetTraitMember(dynamic trait, string memberName, object value)
-        {
-            if (trait == null || string.IsNullOrEmpty(memberName)) return;
-
-            object? traitObj = trait;
-            var type = traitObj?.GetType();
-            if (type == null) return;
-
-            var field = type.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            if (field != null)
-            {
-                field.SetValue(traitObj, value);
-                return;
-            }
-
-            var prop = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            if (prop != null && prop.CanWrite)
-                prop.SetValue(traitObj, value, null);
-        }
-
-        private static void UnlockTrait(string traitId)
-        {
-            if (string.IsNullOrEmpty(traitId)) return;
-            DynamicBridge.CallStaticMethod("PlayerConfig", "unlockTrait", traitId);
-        }
-
-        private static void AddTraitLocalization(string id, string displayName, string description)
-        {
-            if (string.IsNullOrEmpty(id)) return;
-
-            var localizedTextManagerType = FindType("LocalizedTextManager");
-            if (localizedTextManagerType == null) return;
-
-            object? instance = null;
-            var instanceProp = localizedTextManagerType.GetProperty("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            if (instanceProp != null)
-                instance = instanceProp.GetValue(null);
-            if (instance == null)
-            {
-                var instanceField = localizedTextManagerType.GetField("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                if (instanceField != null)
-                    instance = instanceField.GetValue(null);
-            }
-
-            if (instance == null) return;
-
-            var localizedText = DynamicBridge.GetMemberValue(instance, "localizedText")
-                               ?? DynamicBridge.GetMemberValue(instance, "localizedTexts")
-                               ?? DynamicBridge.GetMemberValue(instance, "localizedString")
-                               ?? DynamicBridge.GetMemberValue(instance, "dictionary");
-
-            if (localizedText is IDictionary dict)
-            {
-                AddDictionaryEntry(dict, "trait_" + id, displayName);
-                AddDictionaryEntry(dict, "trait_" + id + "_info", description);
-            }
-        }
-
-        private static void AddDictionaryEntry(IDictionary dict, string key, string value)
-        {
-            if (dict.Contains(key)) return;
-            dict.Add(key, value);
-        }
-
-        private static Type? FindType(string typeName)
-        {
-            if (string.IsNullOrEmpty(typeName)) return null;
-            var type = Type.GetType(typeName);
-            if (type != null) return type;
-
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                type = asm.GetType(typeName);
-                if (type != null) return type;
-            }
-
-            return null;
         }
 
         private static IEnumerator RegisterTraitsWhenReady()
@@ -218,44 +109,30 @@ namespace AcidemaQuirkMod
 
         private static void RegisterAcidEmissionTrait()
         {
-            // Don't register twice (e.g. on scene reload)
             if (AssetManager.traits.get(ACID_TRAIT_ID) != null) return;
 
-            // Use reflection to create ActorTrait
-            var traitType = typeof(Actor).Assembly.GetType("ActorTrait");
-            if (traitType == null) return;
-            dynamic trait = System.Activator.CreateInstance(traitType);
-
+            dynamic trait = new ActorTrait();
             trait.id = ACID_TRAIT_ID;
             trait.name = "Acid Emission";
             trait.description = "Generates and controls corrosive acid. " +
                                 "Body chemistry resists acid naturally, but overuse " +
                                 "dissolves even their hardened tissues.";
+            trait.group_id = "special";
+            trait.path_icon = "ui/Icons/iconAcidEmission";
+            trait.base_stats = new BaseStats();
+            trait.base_stats.set("damage", 1.25f);
+            trait.base_stats.set("armor", 0.9f);
+            trait.base_stats.set("health", 0.95f);
+            trait.base_stats.set("speed", 1.0f);
+            trait.base_stats.set("attack_range", 1.5f);
+            trait.base_stats.set("critical_damage_multiplier", 1.05f);
 
-            // base_stats — use reflection
-            var baseStatsType = typeof(Actor).Assembly.GetType("BaseStats");
-            if (baseStatsType != null)
-            {
-                dynamic baseStats = System.Activator.CreateInstance(baseStatsType);
-                baseStats.damage = 1.25f;
-                baseStats.armor = 0.9f;
-                baseStats.health = 0.95f;
-                baseStats.speed = 1.0f;
-                baseStats.attackRange = 1.5f;
-                baseStats.critical_damage_multiplier = 1.05f;
-                trait.base_stats = baseStats;
-            }
-
-            // Trait editor grouping
-            SetTraitEditorGroup(trait);
-
-            // Trait flags
             trait.is_weapon_trait = false;
+            trait.can_be_given = true;
+            trait.can_be_removed = true;
             trait.can_receive_traits = true;
             trait.can_edit_traits = true;
             trait.spawn_random_trait_allowed = false;
-
-            // Sub-traits applied alongside this one
             trait.effects_traits = new System.Collections.Generic.List<string>
             {
                 ACIDIC_SKIN_TRAIT_ID,
@@ -263,73 +140,66 @@ namespace AcidemaQuirkMod
             };
 
             AssetManager.traits.add(trait);
-            UnlockTrait(ACID_TRAIT_ID);
-            AddTraitLocalization(ACID_TRAIT_ID, "Acid Emission", trait.description);
-            Debug.Log($"[Quirk] Registered trait: {ACID_TRAIT_ID}");
+            trait.unlock(true);
+            LM.AddToCurrentLocale("trait_" + ACID_TRAIT_ID, "Acid Emission");
+            LM.AddToCurrentLocale("trait_" + ACID_TRAIT_ID + "_info", trait.description);
+            LogService.LogInfo($"[Quirk] Registered trait: {ACID_TRAIT_ID}");
         }
 
         private static void RegisterAcidicSkinTrait()
         {
             if (AssetManager.traits.get(ACIDIC_SKIN_TRAIT_ID) != null) return;
 
-            var traitType = typeof(Actor).Assembly.GetType("ActorTrait");
-            if (traitType == null) return;
-            dynamic trait = System.Activator.CreateInstance(traitType);
+            dynamic trait = new ActorTrait();
             trait.id = ACIDIC_SKIN_TRAIT_ID;
             trait.name = "Acidic Skin";
             trait.description = "Skin secretes acid on contact. " +
                                 "Melee attackers take damage and have their armor corroded.";
+            trait.group_id = "special";
+            trait.path_icon = "ui/Icons/iconAcidicSkin";
+            trait.base_stats = new BaseStats();
+            trait.base_stats.set("armor", 0.85f);
 
-            var baseStatsType = typeof(Actor).Assembly.GetType("BaseStats");
-            if (baseStatsType != null)
-            {
-                dynamic baseStats = System.Activator.CreateInstance(baseStatsType);
-                baseStats.armor = 0.85f;
-                trait.base_stats = baseStats;
-            }
-
-            SetTraitEditorGroup(trait);
             trait.is_weapon_trait = false;
+            trait.can_be_given = true;
+            trait.can_be_removed = true;
             trait.can_receive_traits = true;
             trait.can_edit_traits = false;
             trait.spawn_random_trait_allowed = false;
 
             AssetManager.traits.add(trait);
-            UnlockTrait(ACIDIC_SKIN_TRAIT_ID);
-            AddTraitLocalization(ACIDIC_SKIN_TRAIT_ID, "Acidic Skin", trait.description);
-            Debug.Log($"[Quirk] Registered trait: {ACIDIC_SKIN_TRAIT_ID}");
+            trait.unlock(true);
+            LM.AddToCurrentLocale("trait_" + ACIDIC_SKIN_TRAIT_ID, "Acidic Skin");
+            LM.AddToCurrentLocale("trait_" + ACIDIC_SKIN_TRAIT_ID + "_info", trait.description);
+            LogService.LogInfo($"[Quirk] Registered trait: {ACIDIC_SKIN_TRAIT_ID}");
         }
 
         private static void RegisterCorrosiveSalivaTrait()
         {
             if (AssetManager.traits.get(CORROSIVE_SALIVA_TRAIT_ID) != null) return;
 
-            var traitType = typeof(Actor).Assembly.GetType("ActorTrait");
-            if (traitType == null) return;
-            dynamic trait = System.Activator.CreateInstance(traitType);
+            dynamic trait = new ActorTrait();
             trait.id = CORROSIVE_SALIVA_TRAIT_ID;
             trait.name = "Corrosive Saliva";
             trait.description = "Bite attacks apply an acid debuff that melts armor over time.";
+            trait.group_id = "special";
+            trait.path_icon = "ui/Icons/iconCorrosiveSaliva";
+            trait.base_stats = new BaseStats();
+            trait.base_stats.set("damage", 1.1f);
 
-            var baseStatsType = typeof(Actor).Assembly.GetType("BaseStats");
-            if (baseStatsType != null)
-            {
-                dynamic baseStats = System.Activator.CreateInstance(baseStatsType);
-                baseStats.damage = 1.1f;
-                trait.base_stats = baseStats;
-            }
-
-            SetTraitEditorGroup(trait);
             trait.is_weapon_trait = true;
+            trait.can_be_given = true;
+            trait.can_be_removed = true;
             trait.can_receive_traits = true;
             trait.can_edit_traits = false;
             trait.spawn_random_trait_allowed = false;
             trait.give_status_id = "poisoned";
 
             AssetManager.traits.add(trait);
-            UnlockTrait(CORROSIVE_SALIVA_TRAIT_ID);
-            AddTraitLocalization(CORROSIVE_SALIVA_TRAIT_ID, "Corrosive Saliva", trait.description);
-            Debug.Log($"[Quirk] Registered trait: {CORROSIVE_SALIVA_TRAIT_ID}");
+            trait.unlock(true);
+            LM.AddToCurrentLocale("trait_" + CORROSIVE_SALIVA_TRAIT_ID, "Corrosive Saliva");
+            LM.AddToCurrentLocale("trait_" + CORROSIVE_SALIVA_TRAIT_ID + "_info", trait.description);
+            LogService.LogInfo($"[Quirk] Registered trait: {CORROSIVE_SALIVA_TRAIT_ID}");
         }
     }
 
