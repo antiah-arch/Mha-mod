@@ -18,6 +18,7 @@ namespace AcidemaQuirkMod
     public static class AcidemaQuirkPlugin
     {
         private static Harmony _harmony = null!;
+        private static bool _registered;
         public const string PluginGuid    = "com.acidema.quirkmod";
         public const string PluginName    = "Acidema Quirk Mod";
         public const string PluginVersion = "1.1.0";
@@ -28,6 +29,10 @@ namespace AcidemaQuirkMod
 
         public static void Register()
         {
+            if (_registered)
+                return;
+
+            _registered = true;
             LogService.LogInfo($"{PluginName} v{PluginVersion} loading...");
 
             QuirkRegistry.Initialize();
@@ -44,6 +49,15 @@ namespace AcidemaQuirkMod
             _harmony.PatchAll();
 
             LogService.LogInfo($"{PluginName} loaded. {QuirkRegistry.All.Count} quirks registered.");
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Initialize()
+        {
+            if (_registered)
+                return;
+
+            Register();
         }
 
         internal class AcidemaQuirkPluginRunner : MonoBehaviour
@@ -127,17 +141,9 @@ namespace AcidemaQuirkMod
             trait.base_stats.set("attack_range", 1.5f);
             trait.base_stats.set("critical_damage_multiplier", 1.05f);
 
-            trait.is_weapon_trait = false;
             trait.can_be_given = true;
             trait.can_be_removed = true;
-            trait.can_receive_traits = true;
-            trait.can_edit_traits = true;
             trait.spawn_random_trait_allowed = false;
-            trait.effects_traits = new System.Collections.Generic.List<string>
-            {
-                ACIDIC_SKIN_TRAIT_ID,
-                CORROSIVE_SALIVA_TRAIT_ID
-            };
 
             AssetManager.traits.add(trait);
             trait.unlock(true);
@@ -160,11 +166,8 @@ namespace AcidemaQuirkMod
             trait.base_stats = new BaseStats();
             trait.base_stats.set("armor", 0.85f);
 
-            trait.is_weapon_trait = false;
             trait.can_be_given = true;
             trait.can_be_removed = true;
-            trait.can_receive_traits = true;
-            trait.can_edit_traits = false;
             trait.spawn_random_trait_allowed = false;
 
             AssetManager.traits.add(trait);
@@ -187,13 +190,9 @@ namespace AcidemaQuirkMod
             trait.base_stats = new BaseStats();
             trait.base_stats.set("damage", 1.1f);
 
-            trait.is_weapon_trait = true;
             trait.can_be_given = true;
             trait.can_be_removed = true;
-            trait.can_receive_traits = true;
-            trait.can_edit_traits = false;
             trait.spawn_random_trait_allowed = false;
-            trait.give_status_id = "poisoned";
 
             AssetManager.traits.add(trait);
             trait.unlock(true);
